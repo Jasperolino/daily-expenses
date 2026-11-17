@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ea580c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Daily Expenses</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="muted small" id="todayLabel"></div>
+      <div class="total" id="todayTotal">₱0.00</div>
+      <div class="muted small">spent today</div>
+    </div>
+    <div class="top-right">
+      <div class="streak" id="streak" title="Days in a row you logged your expenses">🔥 0</div>
+      <button class="sync-pill hidden" id="syncPill" type="button" title="Google Sheets sync"></button>
+    </div>
+  </header>
+
+  <div class="budget hidden" id="budgetBox">
+    <div class="budget-text"><span id="budgetLabel"></span><span id="budgetLeft"></span></div>
+    <div class="meter"><div class="meter-fill" id="budgetFill"></div></div>
+  </div>
+
+  <div class="banner hidden" id="reminderBanner"></div>
+
+  <main>
+    <!-- TODAY -->
+    <section class="view" id="view-today">
+      <form id="expenseForm" class="card" autocomplete="off">
+        <div class="form-title hidden" id="editTitle">✏️ Editing expense</div>
+        <div class="row">
+          <div class="amount-wrap"><span class="peso" id="currencySign">₱</span>
+            <input id="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" required aria-label="Amount"></div>
+          <input id="date" type="date" aria-label="Date">
+        </div>
+        <div>
+          <div class="label">Category</div>
+          <div class="chips" id="categoryChips"></div>
+        </div>
+        <div>
+          <div class="label">Paid with</div>
+          <div class="chips" id="payChips"></div>
+        </div>
+        <div id="otherWrap" class="hidden">
+          <div class="label">Others — please specify</div>
+          <input id="other" type="text" list="otherList" maxlength="40" placeholder="e.g. Gift, Pet food, Haircut, Donation">
+          <datalist id="otherList"></datalist>
+        </div>
+        <div>
+          <div class="label">Note <span class="muted">(optional)</span></div>
+          <input id="note" type="text" placeholder="e.g. lunch with team" maxlength="80">
+        </div>
+        <div class="row">
+          <button type="button" class="ghost hidden" id="cancelEdit">Cancel</button>
+          <button type="submit" class="primary" id="submitBtn">Add expense</button>
+        </div>
+      </form>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Today</h2>
+          <button class="ghost" id="noSpendBtn" type="button">I spent nothing today</button>
+        </div>
+        <ul class="list" id="todayList"></ul>
+        <p class="muted small hint">Tap an expense to edit it.</p>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="view hidden" id="view-history">
+      <div class="card">
+        <h2>Last 7 days</h2>
+        <div class="bars" id="weekBars"></div>
+      </div>
+      <div class="card">
+        <div class="month-nav">
+          <button type="button" class="ghost" id="prevMonth" aria-label="Previous month">‹</button>
+          <h2 id="monthLabel"></h2>
+          <button type="button" class="ghost" id="nextMonth" aria-label="Next month">›</button>
+        </div>
+        <div class="stats" id="monthStats"></div>
+        <h3>Where your money went</h3>
+        <div id="catBreakdown"></div>
+      </div>
+      <div class="card">
+        <input id="search" type="search" placeholder="🔍 Search notes, categories, payment…">
+        <div id="historyList"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view hidden" id="view-settings">
+      <div class="card" id="sheetsCard">
+        <h2>📗 Google Sheets backup</h2>
+        <div id="sheetsSetup">
+          <p class="small muted">Save your expenses to your own Google spreadsheet. It backs up your data and keeps your phone and computer in sync.</p>
+          <label class="field">Your name <input id="sName" type="text" maxlength="40" placeholder="e.g. Juan Dela Cruz"></label>
+          <label class="field">Your email <span class="muted">(optional, for your sheet link and email reminders)</span>
+            <input id="sEmail" type="email" placeholder="you@gmail.com"></label>
+          <label class="field hidden" id="urlField">Apps Script web app URL
+            <input id="sUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec"></label>
+          <button class="primary" id="connectBtn" type="button">Create my spreadsheet</button>
+          <details class="small">
+            <summary>Already have a spreadsheet on another device?</summary>
+            <label class="field">Enter your sync code <input id="linkCode" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></label>
+            <button class="ghost" id="linkBtn" type="button">Link this device</button>
+          </details>
+        </div>
+        <div id="sheetsConnected" class="hidden">
+          <p class="small" id="sheetsStatus"></p>
+          <div class="row">
+            <a class="btn primary" id="openSheet" target="_blank" rel="noopener">Open my spreadsheet</a>
+            <button class="ghost" id="syncNow" type="button">Sync now</button>
+          </div>
+          <label class="check"><input type="checkbox" id="emailRemind"> Email me at 8 PM if I haven't logged that day</label>
+          <div class="code-box">
+            <div class="small muted">Sync code — enter it on your other phone or computer to see the same data:</div>
+            <code id="syncCode"></code>
+            <button class="ghost" id="copyCode" type="button">Copy</button>
+          </div>
+          <button class="ghost" id="disconnectBtn" type="button">Disconnect this device</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🔔 Daily reminder</h2>
+        <label class="field">Remind me at <input type="time" id="reminderTime"></label>
+        <label class="field">Final warning at <input type="time" id="warningTime"></label>
+        <button class="primary" id="notifyBtn" type="button">Enable notifications</button>
+        <p class="muted small" id="notifyStatus"></p>
+        <button class="ghost" id="testNotifyBtn" type="button">Send a test notification</button>
+      </div>
+
+      <div class="card">
+        <h2>💰 Budget</h2>
+        <label class="field">Monthly budget (₱) — leave empty for none
+          <input type="number" inputmode="decimal" id="budget" min="0" step="100" placeholder="e.g. 15000"></label>
+        <label class="field">Currency symbol <input type="text" id="currency" maxlength="3"></label>
+      </div>
+
+      <div class="card">
+        <h2>📱 Install on your phone</h2>
+        <p class="small"><b>Android (Chrome):</b> menu ⋮ → <i>Install app</i>.<br>
+        <b>iPhone (Safari):</b> Share → <i>Add to Home Screen</i>, then open it from the home screen and enable notifications.<br>
+        <b>Computer:</b> click the install icon in the address bar.</p>
+        <button class="ghost hidden" id="installBtn" type="button">Install app</button>
+      </div>
+
+      <div class="card">
+        <h2>🗂️ Your data</h2>
+        <p class="muted small">Stored on this device<span id="dataSheetsNote"></span>.</p>
+        <div class="row">
+          <button class="ghost" id="exportBtn" type="button">Export CSV</button>
+          <button class="danger" id="resetBtn" type="button">Delete data on this device</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs">
+    <button data-view="today" class="active">📝<span>Today</span></button>
+    <button data-view="history">📊<span>History</span></button>
+    <button data-view="settings">⚙️<span>Settings</span></button>
+  </nav>
+</div>
+
+<!-- Missed-day warning -->
+<dialog id="warnDialog">
+  <div class="warn-icon">⚠️</div>
+  <h2 id="warnTitle">You missed a day</h2>
+  <p id="warnText"></p>
+  <ul class="why">
+    <li><b>Small costs add up.</b> Coffees, snacks, load and fares you forget are often 20–30% of what people really spend.</li>
+    <li><b>Memory fades fast.</b> After 24 hours most people can't recall half of what they bought.</li>
+    <li><b>Gaps break your budget.</b> One missing day makes your weekly and monthly totals wrong.</li>
+    <li><b>Habits need streaks.</b> Logging every day is what makes saving money actually work.</li>
+  </ul>
+  <div id="missedDays" class="missed"></div>
+  <button class="primary" id="warnClose" type="button">Got it, I'll catch up</button>
+</dialog>
+
+<div class="toast hidden" id="toast"></div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

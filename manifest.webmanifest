@@ -1,0 +1,13 @@
+{
+  "name": "Daily Expenses",
+  "short_name": "Expenses",
+  "description": "Log your spending every day, with an end-of-day reminder.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff8f3",
+  "theme_color": "#ea580c",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
