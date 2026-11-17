@@ -1,6 +1,6 @@
 'use strict';
-const SHELL = 'expenses-shell-v2';
-const FILES = ['./', 'index.html', 'style.css', 'config.js', 'app.js', 'manifest.webmanifest', 'icon.svg'];
+const SHELL = 'expenses-shell-v3';
+const FILES = ['./', 'index.html', 'guide.html', 'style.css', 'config.js', 'app.js', 'manifest.webmanifest', 'icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

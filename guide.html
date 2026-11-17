@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ea580c">
+<title>How Daily Expenses Works</title>
+<meta name="description" content="A simple guide to tracking your daily spending in pesos, with reminders, budgets and Google Sheets backup.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root {
+  --bg: #fff8f3; --card: #ffffff; --text: #1f1a17; --muted: #6f655e; --line: #f0e4da;
+  --brand: #ea580c; --brand-2: #f97316; --brand-soft: #ffedd5; --brand-text: #c2410c;
+  --warn: #a16207; --warn-soft: #fef9c3; --danger: #b91c1c; --danger-soft: #fee2e2; --ok: #15803d; --ok-soft: #dcfce7;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15100c; --card: #201913; --text: #f5ede6; --muted: #a8998d; --line: #362a21;
+    --brand: #f97316; --brand-2: #fb923c; --brand-soft: #3d2210; --brand-text: #fdba74;
+    --warn: #facc15; --warn-soft: #3a300a; --danger: #f87171; --danger-soft: #3b1414; --ok: #4ade80; --ok-soft: #12301c;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 16px 64px; }
+a { color: var(--brand-text); }
+h1, h2, h3 { line-height: 1.25; text-wrap: balance; }
+h2 { font-size: 22px; margin: 0 0 6px; }
+h3 { font-size: 16px; margin: 18px 0 6px; }
+p { margin: 0 0 12px; }
+.muted { color: var(--muted); }
+
+/* top bar */
+.bar { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; padding-bottom: 10px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 800; text-decoration: none; color: var(--text); }
+.brand img { width: 28px; height: 28px; border-radius: 7px; }
+.btn { display: inline-block; text-decoration: none; font-weight: 700; border-radius: 10px; padding: 10px 16px;
+  background: linear-gradient(135deg, var(--brand-2), var(--brand)); color: #fff; box-shadow: 0 2px 8px rgba(234,88,12,.25); }
+.btn.small { padding: 7px 12px; font-size: 14px; }
+
+/* hero */
+.hero { padding: 36px 0 12px; }
+.hero h1 { font-size: clamp(28px, 7vw, 40px); margin: 0 0 10px; letter-spacing: -0.5px; }
+.hero h1 span { color: var(--brand); }
+.hero p { font-size: 17px; color: var(--muted); max-width: 560px; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 4px; }
+.pill { background: var(--brand-soft); color: var(--brand-text); font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+
+/* toc */
+.toc { display: flex; gap: 6px; overflow-x: auto; padding: 14px 0; margin: 0 -16px; padding-left: 16px; padding-right: 16px; scrollbar-width: none; }
+.toc a { flex: none; text-decoration: none; font-size: 14px; color: var(--text); border: 1px solid var(--line); background: var(--card); padding: 6px 12px; border-radius: 999px; }
+
+section { padding: 28px 0 4px; scroll-margin-top: 60px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand-text); margin-bottom: 4px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin: 12px 0; }
+
+/* steps */
+.steps { display: grid; gap: 10px; counter-reset: s; margin-top: 12px; }
+.step { display: grid; grid-template-columns: 36px 1fr; gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.step::before { counter-increment: s; content: counter(s); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--brand); color: #fff; font-weight: 800; }
+.step > div > b:first-child { display: block; margin-bottom: 2px; }
+.step p { margin: 0; font-size: 15px; color: var(--muted); }
+
+/* phone mock */
+.demo { display: grid; grid-template-columns: minmax(0, 280px) 1fr; gap: 20px; align-items: start; margin-top: 12px; }
+@media (max-width: 620px) { .demo { grid-template-columns: 1fr; } }
+.phone { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 14px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+.phone .amt { font-size: 22px; font-weight: 800; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; margin-bottom: 10px; background: var(--bg); }
+.phone .amt span { color: var(--brand-text); }
+.phone .lbl { font-size: 11px; font-weight: 700; color: var(--muted); margin: 8px 0 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; font-size: 12px; }
+.chip.on { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
+.phone .field { border: 1px solid var(--brand); border-radius: 8px; padding: 6px 8px; background: var(--bg); }
+.phone .field.plain { border-color: var(--line); color: var(--muted); }
+.phone .add { margin-top: 10px; text-align: center; border-radius: 10px; padding: 8px; color: #fff; font-weight: 700;
+  background: linear-gradient(135deg, var(--brand-2), var(--brand)); }
+.callouts { display: grid; gap: 10px; }
+.callout { display: grid; grid-template-columns: 28px 1fr; gap: 10px; font-size: 15px; }
+.callout .n { width: 28px; height: 28px; border-radius: 50%; background: var(--brand-soft); color: var(--brand-text); font-weight: 800; display: grid; place-items: center; font-size: 13px; }
+.callout p { margin: 0; color: var(--muted); }
+.callout b { color: var(--text); }
+
+/* timeline */
+.timeline { position: relative; margin: 16px 0 0 10px; padding-left: 26px; border-left: 3px solid var(--line); }
+.tl { position: relative; margin-bottom: 18px; }
+.tl::before { content: ""; position: absolute; left: -34px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--card); border: 3px solid var(--brand); }
+.tl.warn::before { border-color: var(--warn); }
+.tl.danger::before { border-color: var(--danger); background: var(--danger); }
+.tl.ok::before { border-color: var(--ok); background: var(--ok); }
+.tl .time { font-size: 13px; font-weight: 800; color: var(--brand-text); }
+.tl.warn .time { color: var(--warn); } .tl.danger .time { color: var(--danger); } .tl.ok .time { color: var(--ok); }
+.tl > b { display: block; }
+.tl p { margin: 2px 0 0; font-size: 15px; color: var(--muted); }
+.notif { margin-top: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; display: grid; grid-template-columns: 28px 1fr; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,.05); }
+.notif img { width: 28px; height: 28px; border-radius: 7px; }
+.notif small { color: var(--muted); display: block; }
+
+/* feature grid */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
+.feat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.feat .ic { font-size: 22px; }
+.feat > b { display: block; margin: 4px 0 2px; }
+.feat p { margin: 0; font-size: 14px; color: var(--muted); }
+
+/* budget meter */
+.meter { height: 10px; background: var(--brand-soft); border-radius: 999px; overflow: hidden; margin: 6px 0 4px; }
+.meter i { display: block; height: 100%; border-radius: 999px; }
+.mrow { font-size: 14px; display: flex; justify-content: space-between; }
+.mrow + .meter + .mcap { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+
+/* sheets */
+.sheet { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 13px; background: var(--card); margin-top: 12px; }
+.sheet table { width: 100%; border-collapse: collapse; }
+.sheet th { background: var(--brand); color: #fff; text-align: left; padding: 6px 8px; font-weight: 700; }
+.sheet td { border-top: 1px solid var(--line); padding: 6px 8px; font-variant-numeric: tabular-nums; }
+.sheet .tabs { display: flex; gap: 2px; background: var(--bg); padding: 4px 4px 0; border-top: 1px solid var(--line); }
+.sheet .tabs span { padding: 4px 10px; font-size: 12px; border-radius: 6px 6px 0 0; color: var(--muted); }
+.sheet .tabs span.on { background: var(--card); color: var(--brand-text); font-weight: 700; }
+.scroll { overflow-x: auto; }
+
+/* insights */
+.insight { border-left: 4px solid var(--brand); background: var(--card); border-radius: 0 12px 12px 0; padding: 12px 14px; margin: 10px 0; }
+.insight > b { display: block; }
+.insight p { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+.stat { font-size: 28px; font-weight: 800; color: var(--brand); line-height: 1.1; }
+
+/* faq */
+details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+summary { cursor: pointer; font-weight: 600; }
+details p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
+
+.note { background: var(--warn-soft); color: var(--text); border-radius: 12px; padding: 12px 14px; font-size: 15px; margin: 12px 0; }
+.cta { text-align: center; padding: 32px 16px; margin-top: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; }
+.cta h2 { margin-bottom: 8px; }
+footer { text-align: center; font-size: 13px; color: var(--muted); padding-top: 24px; }
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <a class="brand" href="./"><img src="icon.svg" alt="">Daily Expenses</a>
+  <a class="btn small" href="./">Open the app</a>
+</div></div>
+
+<main class="wrap">
+  <div class="hero">
+    <h1>Know where every <span>peso</span> goes — in 30 seconds a day.</h1>
+    <p>Daily Expenses is a simple tracker that reminds you every evening to write down what you spent, warns you when you forget, and backs everything up to your own Google spreadsheet.</p>
+    <div class="pills"><span class="pill">📱 Phone &amp; computer</span><span class="pill">🔔 Daily reminders</span><span class="pill">📗 Google Sheets</span><span class="pill">📶 Works offline</span><span class="pill">₱ Free</span></div>
+  </div>
+
+  <nav class="toc" aria-label="On this page">
+    <a href="#start">Get started</a><a href="#log">Log an expense</a><a href="#reminders">Reminders</a>
+    <a href="#streak">Streaks</a><a href="#budget">Budget</a><a href="#history">History</a>
+    <a href="#sheets">Google Sheets</a><a href="#insights">Money tips</a><a href="#faq">FAQ</a>
+  </nav>
+
+  <!-- START -->
+  <section id="start">
+    <div class="eyebrow">Step by step</div>
+    <h2>Get started in 3 minutes</h2>
+    <div class="steps">
+      <div class="step"><div><b>Install it on your phone</b>
+        <p><b>Android:</b> open the app in Chrome → tap <b>⋮</b> → <b>Install app</b>.<br>
+        <b>iPhone:</b> open it in Safari → tap <b>Share</b> → <b>Add to Home Screen</b>, then always open it from the home-screen icon.</p></div></div>
+      <div class="step"><div><b>Turn on notifications</b>
+        <p>Go to <b>⚙️ Settings → Daily reminder → Enable notifications</b> and tap <b>Allow</b>. Without this, the app can't remind you.</p></div></div>
+      <div class="step"><div><b>Create your spreadsheet</b> <span class="muted">(recommended)</span>
+        <p>In <b>Settings → Google Sheets backup</b>, type your name and Gmail, then tap <b>Create my spreadsheet</b>. Your own sheet is made automatically and shared with your Gmail.</p></div></div>
+      <div class="step"><div><b>Set a monthly budget</b> <span class="muted">(optional)</span>
+        <p>In <b>Settings → Budget</b>, enter how much you want to spend per month, e.g. ₱15,000.</p></div></div>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <section id="log">
+    <div class="eyebrow">Every day</div>
+    <h2>Logging an expense</h2>
+    <p class="muted">Everything happens on the <b>📝 Today</b> tab.</p>
+    <div class="demo">
+      <div class="phone" aria-hidden="true">
+        <div class="amt"><span>₱</span> 250.00</div>
+        <div class="lbl">CATEGORY</div>
+        <div class="chips"><span class="chip">🍔 Food</span><span class="chip">🛒 Groceries</span><span class="chip">🚌 Transport</span><span class="chip">📶 Load</span><span class="chip on">✏️ Others</span></div>
+        <div class="lbl">PAID WITH</div>
+        <div class="chips"><span class="chip on">Cash</span><span class="chip">GCash</span><span class="chip">Maya</span><span class="chip">Card</span></div>
+        <div class="lbl">OTHERS — PLEASE SPECIFY</div>
+        <div class="field">Haircut</div>
+        <div class="lbl">NOTE</div>
+        <div class="field plain">at the mall</div>
+        <div class="add">Add expense</div>
+      </div>
+      <div class="callouts">
+        <div class="callout"><span class="n">1</span><p><b>Type the amount</b> in pesos. The date is today by default — change it to add something you forgot from an earlier day.</p></div>
+        <div class="callout"><span class="n">2</span><p><b>Pick a category.</b> Food, Groceries, Transport, Bills, Load &amp; Internet, Health, Shopping, Fun or Others.</p></div>
+        <div class="callout"><span class="n">3</span><p><b>Pick how you paid</b> — Cash, GCash, Maya, Card or Bank. The app remembers your last choice.</p></div>
+        <div class="callout"><span class="n">4</span><p><b>Using “Others”?</b> A box appears where you write what it was (Haircut, Pet food, Gift…). Things you've typed before are suggested next time.</p></div>
+        <div class="callout"><span class="n">5</span><p><b>Add a note</b> if you like, then tap <b>Add expense</b>. Done!</p></div>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="feat"><div class="ic">✏️</div><b>Fix a mistake</b><p>Tap any expense in the list to edit it, then tap <i>Save changes</i>.</p></div>
+      <div class="feat"><div class="ic">↩️</div><b>Delete &amp; undo</b><p>Tap ✕ to delete. Changed your mind? Tap <i>Undo</i> on the message that pops up.</p></div>
+      <div class="feat"><div class="ic">🙌</div><b>Didn't spend anything?</b><p>Tap <i>I spent nothing today</i>. The day counts as logged and your streak continues.</p></div>
+    </div>
+  </section>
+
+  <!-- REMINDERS -->
+  <section id="reminders">
+    <div class="eyebrow">Never forget</div>
+    <h2>How the reminders work</h2>
+    <p class="muted">If you've already logged something today (or tapped “I spent nothing today”), you won't be bothered. If not, here's what happens:</p>
+    <div class="timeline">
+      <div class="tl"><div class="time">During the day</div><b>Log as you go</b><p>The best habit: add each expense right after you pay. It takes a few seconds.</p></div>
+      <div class="tl warn"><div class="time">8:00 PM</div><b>Friendly reminder</b><p>A notification asks what you spent today, and a yellow banner appears in the app.</p>
+        <div class="notif"><img src="icon.svg" alt=""><div><b>📝 How much did you spend today?</b><small>Take 30 seconds to log today's expenses before you forget.</small></div></div></div>
+      <div class="tl warn"><div class="time">8:00 PM · by email</div><b>Email reminder</b><p>If you gave your Gmail when creating your spreadsheet, you also get an email — handy on iPhone.</p></div>
+      <div class="tl danger"><div class="time">11:00 PM</div><b>Final warning</b><p>A stronger notification that stays on screen, and a red banner: your streak is about to reset.</p>
+        <div class="notif"><img src="icon.svg" alt=""><div><b>⚠️ Don't lose today's expenses!</b><small>You haven't logged anything today. Unrecorded spending is the #1 reason budgets fail.</small></div></div></div>
+      <div class="tl danger"><div class="time">Next day</div><b>Missed-day warning</b><p>When you open the app, a pop-up shows which days are missing and explains why they matter, with one-tap buttons to fill them in or mark them as no-spend days.</p></div>
+      <div class="tl ok"><div class="time">Anytime</div><b>Change the times</b><p>Prefer 9 PM? Set your own reminder and warning times in <b>Settings → Daily reminder</b>.</p></div>
+    </div>
+    <div class="note">📱 <b>Phone tip:</b> on Android, reminders arrive even when the app is closed (after installing it). On iPhone, open the app from the home-screen icon and keep the email reminder on for the most reliable alerts.</div>
+  </section>
+
+  <!-- STREAK -->
+  <section id="streak">
+    <div class="eyebrow">Build the habit</div>
+    <h2>Streaks 🔥 and no-spend days</h2>
+    <p>The flame at the top of the app counts how many days in a row you've logged. A day counts when you've added at least one expense <b>or</b> tapped <i>I spent nothing today</i>.</p>
+    <p>Miss a day and the streak starts over — but you can still save it: fill in the missing day from the warning pop-up or from <b>History</b>, and the streak comes back.</p>
+  </section>
+
+  <!-- BUDGET -->
+  <section id="budget">
+    <div class="eyebrow">Stay on track</div>
+    <h2>Your monthly budget</h2>
+    <p class="muted">Once you set a budget, a bar at the top shows how much of this month's money is used.</p>
+    <div class="card">
+      <div class="mrow"><span>₱6,200 of ₱15,000</span><span>₱8,800 left</span></div>
+      <div class="meter"><i style="width:41%;background:linear-gradient(90deg,var(--brand-2),var(--brand))"></i></div>
+      <div class="mcap">Orange — you're on track.</div>
+      <div class="mrow"><span>₱12,600 of ₱15,000</span><span>₱2,400 left</span></div>
+      <div class="meter"><i style="width:84%;background:var(--warn)"></i></div>
+      <div class="mcap">Yellow — 80% used. The app shows an alert so you can slow down.</div>
+      <div class="mrow"><span>₱15,900 of ₱15,000</span><span style="color:var(--danger);font-weight:700">₱900 over!</span></div>
+      <div class="meter"><i style="width:100%;background:var(--danger)"></i></div>
+      <div class="mcap" style="margin-bottom:0">Red — over budget. You'll get an alert the moment it happens.</div>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="history">
+    <div class="eyebrow">See the big picture</div>
+    <h2>History &amp; insights</h2>
+    <p class="muted">Open the <b>📊 History</b> tab to understand your spending.</p>
+    <div class="grid">
+      <div class="feat"><div class="ic">📈</div><b>Last 7 days</b><p>A bar for each day. Faded red bars are days you didn't log.</p></div>
+      <div class="feat"><div class="ic">🗓️</div><b>Month by month</b><p>Use ‹ › to switch months and see the total, daily average and budget left.</p></div>
+      <div class="feat"><div class="ic">🍩</div><b>Where your money went</b><p>Each category with its total and percentage, biggest first.</p></div>
+      <div class="feat"><div class="ic">🔍</div><b>Search</b><p>Find anything — “Jollibee”, “GCash”, “load” — and see how much you spent on it in total.</p></div>
+      <div class="feat"><div class="ic">⚠️</div><b>Missing days</b><p>Unlogged days show in red with <i>Log this day</i> and <i>Spent nothing</i> buttons.</p></div>
+      <div class="feat"><div class="ic">⬇️</div><b>Export</b><p>Settings → <i>Export CSV</i> downloads everything for Excel.</p></div>
+    </div>
+  </section>
+
+  <!-- SHEETS -->
+  <section id="sheets">
+    <div class="eyebrow">Backup &amp; sync</div>
+    <h2>Your own Google spreadsheet</h2>
+    <p>When you tap <b>Create my spreadsheet</b>, a sheet just for you is created. Every expense you add, edit or delete is copied there within seconds. No internet? The app saves on your phone and uploads later automatically — look for <b>☁️ Synced</b> at the top.</p>
+    <div class="sheet scroll" aria-hidden="true">
+      <table>
+        <tr><th>Date</th><th>Category</th><th>Others</th><th>Amount (₱)</th><th>Paid with</th><th>Note</th></tr>
+        <tr><td>2026-11-18</td><td>Food</td><td></td><td>₱120.00</td><td>Cash</td><td>lunch</td></tr>
+        <tr><td>2026-11-18</td><td>Transport</td><td></td><td>₱45.00</td><td>Cash</td><td>jeep</td></tr>
+        <tr><td>2026-11-18</td><td>Others</td><td>Haircut</td><td>₱250.00</td><td>GCash</td><td></td></tr>
+      </table>
+      <div class="tabs"><span>Summary</span><span class="on">Expenses</span><span>No-spend days</span></div>
+    </div>
+    <h3>Three tabs, ready for you</h3>
+    <p><b>Summary</b> — this month by category, totals for every month, and spending by payment method. <b>Expenses</b> — every entry. <b>No-spend days</b> — days you spent nothing.</p>
+    <h3>Use it on your phone and computer</h3>
+    <p>In <b>Settings</b> you'll find your <b>sync code</b>. On another device, open the app, go to <b>Settings → Google Sheets backup → “Already have a spreadsheet on another device?”</b>, paste the code, and the same data appears there.</p>
+    <div class="note">🔐 <b>Keep your sync code private</b> — anyone with it can see and change your expenses. Your spreadsheet is stored in the app owner's Google Drive and shared with your Gmail.</div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section id="insights">
+    <div class="eyebrow">Why it works</div>
+    <h2>Money tips to get the most out of it</h2>
+    <div class="insight"><div class="stat">₱50 × 30</div><b>Small things are big things</b><p>A ₱50 snack or extra fare every day is ₱1,500 a month — ₱18,000 a year. Logging is how you see it.</p></div>
+    <div class="insight"><b>Log right after you pay</b><p>It's the easiest moment to remember. Waiting until evening works too — the 8 PM reminder has you covered.</p></div>
+    <div class="insight"><b>Check “Where your money went” every Sunday</b><p>Look at your top category. Cutting just that one by 10% usually saves more than trying to cut everything.</p></div>
+    <div class="insight"><b>Watch GCash and Maya</b><p>Digital payments feel less like spending. Use the “Paid with” totals in your spreadsheet's Summary tab to compare cash vs e-wallet.</p></div>
+    <div class="insight"><b>Use “Others” honestly</b><p>If the same “Others” item keeps showing up (e.g. Milk tea), that's a habit worth noticing.</p></div>
+    <div class="insight"><b>Set a budget you can actually keep</b><p>Start with last month's total from History, then lower it a little each month.</p></div>
+    <div class="insight"><b>Aim for a 30-day streak</b><p>After about a month, logging becomes automatic — and your monthly totals become trustworthy.</p></div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="eyebrow">Questions</div>
+    <h2>FAQ</h2>
+    <details><summary>Is it free?</summary><p>Yes. There are no ads and no payments.</p></details>
+    <details><summary>Where is my data stored?</summary><p>On your phone, inside the app. If you create a spreadsheet, a copy is also saved in Google Sheets (in the app owner's Google Drive, shared with your Gmail). Nothing is sold or shared with anyone else.</p></details>
+    <details><summary>I'm not getting notifications.</summary><p>Check that you tapped <i>Enable notifications</i> in Settings and allowed them. On iPhone, notifications only work when the app is added to the Home Screen and opened from there. Also check your phone isn't in Do Not Disturb or battery-saver mode. Use <i>Send a test notification</i> in Settings to check.</p></details>
+    <details><summary>I forgot to log yesterday. Can I still add it?</summary><p>Yes. Change the date above the category list before tapping <i>Add expense</i>, or tap <i>Log this day</i> in History or in the missed-day pop-up.</p></details>
+    <details><summary>Can I edit my spreadsheet directly?</summary><p>Yes. Changes you make in the Expenses tab come back into the app the next time it syncs. Don't delete the hidden first column (ID) — it keeps the app and the sheet matched.</p></details>
+    <details><summary>I got a new phone. How do I get my data back?</summary><p>Install the app on the new phone, go to Settings → Google Sheets backup → “Already have a spreadsheet on another device?”, and enter your sync code. Tip: save your sync code somewhere safe, e.g. in your notes.</p></details>
+    <details><summary>It says “Sync failed”.</summary><p>Usually it's just no internet. Your entries are safe on your phone and will upload automatically when you're back online. You can also tap <i>Sync now</i> in Settings.</p></details>
+    <details><summary>How do I stop the email reminders?</summary><p>Settings → Google Sheets backup → untick “Email me at 8 PM if I haven't logged that day”.</p></details>
+  </section>
+
+  <div class="cta">
+    <h2>Ready? Log your first expense.</h2>
+    <p class="muted">It takes less than 30 seconds.</p>
+    <a class="btn" href="./">Open Daily Expenses</a>
+  </div>
+
+  <footer>Daily Expenses · Track every peso, every day.</footer>
+</main>
+</body>
+</html>

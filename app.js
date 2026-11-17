@@ -151,7 +151,8 @@ function renderToday() {
   const list = $('todayList');
   if (items.length) list.innerHTML = items.map(itemHTML).join('');
   else if (noSpend.includes(today)) list.innerHTML = `<li class="nospend">✅ Marked as a no-spend day. Nice!</li>`;
-  else list.innerHTML = `<li class="empty">Nothing logged yet today. Add what you spent, or tap “I spent nothing today”.</li>`;
+  else list.innerHTML = `<li class="empty">Nothing logged yet today. Add what you spent, or tap “I spent nothing today”.${
+    expenses.length ? '' : '<br><br>New here? <a href="guide.html">📖 See how the app works</a>'}</li>`;
   $('noSpendBtn').classList.toggle('hidden', items.length > 0 || noSpend.includes(today));
   document.querySelector('.hint').classList.toggle('hidden', !items.length);
 }
