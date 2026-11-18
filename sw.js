@@ -1,5 +1,5 @@
 'use strict';
-const SHELL = 'expenses-shell-v3';
+const SHELL = 'expenses-shell-v4';
 const FILES = ['./', 'index.html', 'guide.html', 'style.css', 'config.js', 'app.js', 'manifest.webmanifest', 'icon.svg'];
 
 self.addEventListener('install', e => {
