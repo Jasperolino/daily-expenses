@@ -134,6 +134,29 @@ details p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
 .cta { text-align: center; padding: 32px 16px; margin-top: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; }
 .cta h2 { margin-bottom: 8px; }
 footer { text-align: center; font-size: 13px; color: var(--muted); padding-top: 24px; }
+
+/* glass nav demo */
+.glass-demo { margin: 14px 0 4px; padding: 26px 16px; border-radius: 18px;
+  background: radial-gradient(circle at 18% 30%, #b6e388 0, transparent 45%), radial-gradient(circle at 82% 70%, #9ec5f4 0, transparent 42%), var(--brand-soft); }
+.glass-nav { display: flex; gap: 4px; padding: 6px; border-radius: 999px; max-width: 380px; margin: 0 auto;
+  background: rgba(255,255,255,.55); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,.75); box-shadow: 0 10px 30px rgba(16,38,27,.14), inset 0 1px 0 rgba(255,255,255,.9); }
+.glass-nav span { flex: 1; text-align: center; padding: 11px 0; border-radius: 999px; font-weight: 800; font-size: 15px; color: #7d8a83; }
+.glass-nav span.on { background: #fff; color: var(--text); box-shadow: 0 2px 10px rgba(16,38,27,.12); }
+/* donut demo */
+.donut-box { position: relative; width: 190px; margin: 4px auto 12px; }
+.donut-box svg { display: block; width: 100%; height: auto; overflow: visible; }
+.donut-box .seg { fill: none; stroke-width: 20; stroke-linecap: round; cursor: pointer; transition: stroke-width .15s, opacity .15s; }
+.donut-box .seg.on { stroke-width: 26; }
+.donut-box svg.focus .seg:not(.on) { opacity: .35; }
+.donut-box .track { fill: none; stroke: var(--line); stroke-width: 20; }
+.donut-mid { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.donut-mid b { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.donut-mid span { font-size: 12px; color: var(--muted); }
+.g-legend { display: grid; gap: 2px; }
+.g-legend div { display: flex; justify-content: space-between; font-size: 12px; cursor: pointer; padding: 3px 6px; border-radius: 6px; }
+.g-legend div.on { background: var(--brand-soft); }
+.g-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 </style>
 </head>
 <body>
@@ -152,7 +175,7 @@ footer { text-align: center; font-size: 13px; color: var(--muted); padding-top: 
 
   <nav class="toc" aria-label="On this page">
     <a href="#start">Get started</a><a href="#log">Log an expense</a><a href="#reminders">Reminders</a>
-    <a href="#streak">Streaks</a><a href="#budget">Budget</a><a href="#history">History</a>
+    <a href="#nav">Getting around</a><a href="#streak">Streaks</a><a href="#budget">Budget</a><a href="#history">History</a>
     <a href="#sheets">Google Sheets</a><a href="#insights">Money tips</a><a href="#faq">FAQ</a>
   </nav>
 
@@ -165,7 +188,7 @@ footer { text-align: center; font-size: 13px; color: var(--muted); padding-top: 
         <p><b>Android:</b> open the app in Chrome → tap <b>⋮</b> → <b>Install app</b>.<br>
         <b>iPhone:</b> open it in Safari → tap <b>Share</b> → <b>Add to Home Screen</b>, then always open it from the home-screen icon.</p></div></div>
       <div class="step"><div><b>Turn on notifications</b>
-        <p>Go to <b>⚙️ Settings → Daily reminder → Enable notifications</b> and tap <b>Allow</b>. Without this, the app can't remind you.</p></div></div>
+        <p>Go to <b>Settings → Daily reminder → Enable notifications</b> and tap <b>Allow</b>. Without this, the app can't remind you.</p></div></div>
       <div class="step"><div><b>Create your spreadsheet</b> <span class="muted">(recommended)</span>
         <p>In <b>Settings → Google Sheets backup</b>, type your name and Gmail, then tap <b>Create my spreadsheet</b>. Your own sheet is made automatically and shared with your Gmail.</p></div></div>
       <div class="step"><div><b>Set a monthly budget</b> <span class="muted">(optional)</span>
@@ -177,7 +200,7 @@ footer { text-align: center; font-size: 13px; color: var(--muted); padding-top: 
   <section id="log">
     <div class="eyebrow">Every day</div>
     <h2>Logging an expense</h2>
-    <p class="muted">Everything happens on the <b>📝 Today</b> tab.</p>
+    <p class="muted">Everything happens on the <b>Today</b> tab.</p>
     <div class="demo">
       <div class="phone" aria-hidden="true">
         <div class="amt"><span>₱</span> 250.00</div>
@@ -224,6 +247,21 @@ footer { text-align: center; font-size: 13px; color: var(--muted); padding-top: 
     <div class="note">📱 <b>Phone tip:</b> on Android, reminders arrive even when the app is closed (after installing it). On iPhone, open the app from the home-screen icon and keep the email reminder on for the most reliable alerts.</div>
   </section>
 
+  <!-- NAV -->
+  <section id="nav">
+    <div class="eyebrow">Getting around</div>
+    <h2>The bar at the bottom</h2>
+    <p class="muted">A floating glass bar at the bottom of the screen takes you to the three parts of the app. The white highlighted tab shows where you are.</p>
+    <div class="glass-demo" aria-hidden="true">
+      <div class="glass-nav"><span class="on">Today</span><span>History</span><span>Settings</span></div>
+    </div>
+    <div class="grid">
+      <div class="feat"><b>Today</b><p>Add expenses, see what you've spent today, and mark no-spend days.</p></div>
+      <div class="feat"><b>History</b><p>Your spending ring, category totals, past days and search.</p></div>
+      <div class="feat"><b>Settings</b><p>Reminders, budget, Google Sheets backup, install help and export.</p></div>
+    </div>
+  </section>
+
   <!-- STREAK -->
   <section id="streak">
     <div class="eyebrow">Build the habit</div>
@@ -254,11 +292,25 @@ footer { text-align: center; font-size: 13px; color: var(--muted); padding-top: 
   <section id="history">
     <div class="eyebrow">See the big picture</div>
     <h2>History &amp; insights</h2>
-    <p class="muted">Open the <b>📊 History</b> tab to understand your spending.</p>
+    <p class="muted">Open the <b>History</b> tab to understand your spending.</p>
+    <div class="demo">
+      <div class="phone donut-demo">
+        <div class="donut-box">
+          <svg id="gDonut" viewBox="0 0 220 220" role="img" aria-label="Example spending ring"></svg>
+          <div class="donut-mid"><b id="gMid">₱5,335</b><span id="gCap">Spent this month</span></div>
+        </div>
+        <div id="gLegend" class="g-legend"></div>
+        <p class="small muted" style="text-align:center;margin:8px 0 0">Try it — tap a color</p>
+      </div>
+      <div class="callouts">
+        <div class="callout"><span class="n">1</span><p><b>One ring, the whole month.</b> Each colored piece is a category. The bigger the piece, the more of your money went there. The number in the middle is everything you spent this month.</p></div>
+        <div class="callout"><span class="n">2</span><p><b>Tap a piece</b> (or a row in the list) to see that category's amount and percentage in the middle. Tap it again to go back to the total.</p></div>
+        <div class="callout"><span class="n">3</span><p><b>Every category keeps its own color</b> — Food is always blue, Bills always yellow — so you can compare months at a glance.</p></div>
+        <div class="callout"><span class="n">4</span><p><b>The list under the ring</b> shows each category from biggest to smallest, with its total and percentage. Under <i>Others</i> you'll see what you specified, e.g. Haircut ₱250 · Pet food ₱180.</p></div>
+      </div>
+    </div>
     <div class="grid">
-      <div class="feat"><div class="ic">📈</div><b>Last 7 days</b><p>A bar for each day. Faded red bars are days you didn't log.</p></div>
-      <div class="feat"><div class="ic">🗓️</div><b>Month by month</b><p>Use ‹ › to switch months and see the total, daily average and budget left.</p></div>
-      <div class="feat"><div class="ic">🍩</div><b>Where your money went</b><p>Each category with its total and percentage, biggest first.</p></div>
+      <div class="feat"><div class="ic">🗓️</div><b>Month by month</b><p>Use ‹ › above the ring to switch months. The ring, total, daily average and budget left all update.</p></div>
       <div class="feat"><div class="ic">🔍</div><b>Search</b><p>Find anything — “Jollibee”, “GCash”, “load” — and see how much you spent on it in total.</p></div>
       <div class="feat"><div class="ic">⚠️</div><b>Missing days</b><p>Unlogged days show in red with <i>Log this day</i> and <i>Spent nothing</i> buttons.</p></div>
       <div class="feat"><div class="ic">⬇️</div><b>Export</b><p>Settings → <i>Export CSV</i> downloads everything for Excel.</p></div>
@@ -321,5 +373,38 @@ footer { text-align: center; font-size: 13px; color: var(--muted); padding-top: 
 
   <footer>Daily Expenses · Track every peso, every day.</footer>
 </main>
+<script>
+(function () {
+  var data = [['Food','#2a78d6',620],['Groceries','#eb6834',1500],['Transport','#1baf7a',345],['Bills','#eda100',2100],
+    ['Load & Internet','#e87ba4',300],['Fun','#e34948',40],['Others','#898781',430]];
+  var total = 5335, R = 85, C = 2 * Math.PI * R, W = 20, SP = 8, free = C - data.length * (W + SP), focus = null;
+  var svg = document.getElementById('gDonut'), mid = document.getElementById('gMid'), cap = document.getElementById('gCap'), leg = document.getElementById('gLegend');
+  var peso = function (n) { return '\u20b1' + n.toLocaleString('en-PH'); };
+  function draw() {
+    var h = '<circle class="track" cx="110" cy="110" r="85"></circle>', off = 0;
+    data.forEach(function (d) {
+      var len = Math.max(0.01, d[2] / total * free);
+      h += '<circle class="seg' + (focus === d[0] ? ' on' : '') + '" data-k="' + d[0] + '" cx="110" cy="110" r="85" stroke="' + d[1] +
+        '" stroke-dasharray="' + len.toFixed(2) + ' ' + C.toFixed(2) + '" stroke-dashoffset="' + (-(off + (W + SP) / 2)).toFixed(2) +
+        '" transform="rotate(-90 110 110)"><title>' + d[0] + ': ' + peso(d[2]) + '</title></circle>';
+      off += len + W + SP;
+    });
+    svg.innerHTML = h;
+    svg.classList.toggle('focus', !!focus);
+    var f = data.filter(function (d) { return d[0] === focus; })[0];
+    mid.textContent = peso(f ? f[2] : total);
+    cap.textContent = f ? f[0] + ' \u00b7 ' + Math.round(f[2] / total * 100) + '%' : 'Spent this month';
+    leg.innerHTML = data.slice().sort(function (a, b) { return b[2] - a[2]; }).map(function (d) {
+      return '<div data-k="' + d[0] + '"' + (focus === d[0] ? ' class="on"' : '') + '><span><i style="background:' + d[1] + '"></i>' + d[0] +
+        '</span><b>' + peso(d[2]) + '</b></div>';
+    }).join('');
+  }
+  document.querySelector('.donut-demo').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-k]'); if (!t) return;
+    var k = t.getAttribute('data-k'); focus = focus === k ? null : k; draw();
+  });
+  draw();
+})();
+</script>
 </body>
 </html>

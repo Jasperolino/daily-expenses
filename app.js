@@ -168,20 +168,49 @@ function itemHTML(e) {
   </li>`;
 }
 
+/* Donut chart: one fixed color per category (validated palette), segments drawn in the
+   fixed category order so neighbouring colors are always easy to tell apart. */
+const CAT_COLORS = {
+  'Food': '#2a78d6', 'Groceries': '#eb6834', 'Transport': '#1baf7a', 'Bills': '#eda100',
+  'Load & Internet': '#e87ba4', 'Health': '#008300', 'Shopping': '#6250d6', 'Fun': '#e34948', 'Others': '#898781',
+};
+let focusCat = null;
+
+function renderDonut(byCat, total) {
+  const svg = $('donut');
+  const R = 85, C = 2 * Math.PI * R, W = 20, SPACE = 8;   // W = stroke width (round caps add W/2 each end)
+  const segs = CATEGORIES.map(([name]) => name).filter(n => byCat[n]);
+  let html = `<circle class="track" cx="110" cy="110" r="${R}"></circle>`;
+  if (segs.length === 1) {
+    const n = segs[0];
+    html += `<circle class="seg ${focusCat === n ? 'on' : ''}" data-focus="${esc(n)}" cx="110" cy="110" r="${R}" stroke="${CAT_COLORS[n]}" style="stroke-linecap:butt"><title>${esc(n)}: ${money(byCat[n].amt)} (100%)</title></circle>`;
+  } else {
+    // Every slice reserves room for its rounded caps + a gap, so even a 1% slice stays a separate dot.
+    const free = C - segs.length * (W + SPACE);
+    let offset = 0;
+    segs.forEach(n => {
+      const frac = byCat[n].amt / total;
+      const len = Math.max(0.01, frac * free);
+      html += `<circle class="seg ${focusCat === n ? 'on' : ''}" data-focus="${esc(n)}" cx="110" cy="110" r="${R}" stroke="${CAT_COLORS[n]}"
+        stroke-dasharray="${len.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-(offset + (W + SPACE) / 2)).toFixed(2)}"
+        transform="rotate(-90 110 110)"><title>${esc(n)}: ${money(byCat[n].amt)} (${Math.round(frac * 100)}%)</title></circle>`;
+      offset += len + W + SPACE;
+    });
+  }
+  svg.innerHTML = html;
+  svg.classList.toggle('focus', !!focusCat);
+  const isThisMonth = viewMonth === monthOf(dayKey());
+  if (focusCat && byCat[focusCat]) {
+    $('donutTotal').textContent = moneyShort(byCat[focusCat].amt);
+    $('donutCaption').textContent = `${focusCat} · ${Math.round(byCat[focusCat].amt / total * 100)}%`;
+  } else {
+    $('donutTotal').textContent = moneyShort(total);
+    $('donutCaption').textContent = total ? (isThisMonth ? 'Spent this month' : 'Spent in ' + parseDay(viewMonth + '-01').toLocaleDateString('en-PH', { month: 'long' })) : 'No spending yet';
+  }
+}
+
 function renderHistory() {
   const today = dayKey();
-
-  // Last 7 days bars
-  const days = Array.from({ length: 7 }, (_, i) => addDays(today, i - 6));
-  const totals = days.map(totalFor);
-  const max = Math.max(...totals, 1);
-  $('weekBars').innerHTML = days.map((k, i) => {
-    const missed = k < today && k >= settings.firstDay && !isLogged(k);
-    return `<div class="bar ${missed ? 'missed' : ''}" title="${prettyDay(k)}${missed ? ' — not logged' : ''}">
-      <span class="v">${totals[i] ? Math.round(totals[i]).toLocaleString('en-PH') : missed ? '?' : ''}</span>
-      <div class="fill" style="height:${missed ? 100 : (totals[i] / max) * 100}%"></div>
-      <span>${prettyDay(k, { weekday: 'narrow' })}</span></div>`;
-  }).join('');
 
   // Month summary
   const ym = viewMonth;
@@ -197,14 +226,26 @@ function renderHistory() {
     <div><b>${moneyShort(total)}</b>total</div>
     <div><b>${moneyShort(total / Math.max(1, daysElapsed))}</b>daily avg</div>${third}`;
 
-  // Category breakdown
+  // Category breakdown (donut + legend list)
   const byCat = {};
-  monthItems.forEach(e => { const k = label(e); byCat[k] = byCat[k] || { amt: 0, emo: emojiOf(e) }; byCat[k].amt += e.amount; });
+  monthItems.forEach(e => {
+    const k = catEmoji[e.cat] ? e.cat : 'Others';
+    byCat[k] = byCat[k] || { amt: 0, subs: {} };
+    byCat[k].amt += e.amount;
+    if (k === 'Others') { const s = e.other || 'Others'; byCat[k].subs[s] = (byCat[k].subs[s] || 0) + e.amount; }
+  });
+  if (focusCat && !byCat[focusCat]) focusCat = null;
+  renderDonut(byCat, total);
   const cats = Object.entries(byCat).sort((a, b) => b[1].amt - a[1].amt);
-  $('catBreakdown').innerHTML = cats.length ? cats.map(([name, c]) => `
-    <div class="cat-row"><span>${c.emo} ${esc(name)} <span class="pct">${Math.round(c.amt / total * 100)}%</span></span>
-    <b>${money(c.amt)}</b><div class="meter"><div class="meter-fill" style="width:${c.amt / cats[0][1].amt * 100}%"></div></div></div>`).join('')
-    : '<p class="empty">No expenses this month.</p>';
+  $('catBreakdown').innerHTML = cats.length ? cats.map(([name, c]) => {
+    const subs = name === 'Others' ? Object.entries(c.subs).sort((a, b) => b[1] - a[1]) : [];
+    const subText = subs.length && !(subs.length === 1 && subs[0][0] === 'Others')
+      ? `<div class="small muted" style="grid-column:1/-1">${subs.map(([s, a]) => `${esc(s)} ${moneyShort(a)}`).join(' · ')}</div>` : '';
+    return `<div class="cat-row ${focusCat === name ? 'on' : ''}" data-focus="${esc(name)}">
+      <span><span class="dot" style="background:${CAT_COLORS[name]}"></span>${catEmoji[name]} ${esc(name)} <span class="pct">${Math.round(c.amt / total * 100)}%</span></span>
+      <b>${money(c.amt)}</b>${subText}
+      <div class="meter"><div class="meter-fill" style="width:${c.amt / cats[0][1].amt * 100}%;background:${CAT_COLORS[name]}"></div></div></div>`;
+  }).join('') : '<p class="empty">No expenses this month.</p>';
 
   // Day list / search
   const q = $('search').value.trim().toLowerCase();
@@ -514,7 +555,8 @@ function deleteExpense(id) {
 }
 
 document.addEventListener('click', ev => {
-  const t = ev.target.closest('button, li[data-edit]'); if (!t) return;
+  const t = ev.target.closest('button, li[data-edit], [data-focus]'); if (!t) return;
+  if (t.dataset.focus) { focusCat = focusCat === t.dataset.focus ? null : t.dataset.focus; renderHistory(); return; }
   if (t.dataset.cat) { selectedCat = t.dataset.cat; renderChips(); if (selectedCat === 'Others') $('other').focus(); }
   else if (t.dataset.pay) { selectedPay = t.dataset.pay; renderChips(); }
   else if (t.dataset.del) { deleteExpense(t.dataset.del); }
@@ -528,8 +570,8 @@ document.addEventListener('click', ev => {
 $('cancelEdit').addEventListener('click', resetForm);
 $('noSpendBtn').addEventListener('click', () => { markNoSpend([dayKey()]); toast('✅ No-spend day — streak kept!'); });
 $('warnClose').addEventListener('click', () => $('warnDialog').close());
-$('prevMonth').addEventListener('click', () => { viewMonth = addMonths(viewMonth, -1); renderHistory(); });
-$('nextMonth').addEventListener('click', () => { viewMonth = addMonths(viewMonth, 1); renderHistory(); });
+$('prevMonth').addEventListener('click', () => { viewMonth = addMonths(viewMonth, -1); focusCat = null; renderHistory(); });
+$('nextMonth').addEventListener('click', () => { viewMonth = addMonths(viewMonth, 1); focusCat = null; renderHistory(); });
 $('search').addEventListener('input', renderHistory);
 $('syncPill').addEventListener('click', () => sync());
 
